@@ -14,12 +14,19 @@ class ViewController: UIViewController {
     
     var countries = [String]()
     var score = 0
+    var lastScore = 0
     var correctAnswer = 0
     var tries = 0
     var correctGuesses = 0
     
+    let defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if let savedScore = defaults.object(forKey: "savedScore") as? Int {
+            lastScore = savedScore
+        }
         
         countries += ["estonia","france","germany",
                       "ireland","italy","monaco","nigeria",
@@ -65,20 +72,28 @@ class ViewController: UIViewController {
         var title: String
         var wrongFlagText: String = ""
         var completed10FlagText: String = ""
+        var recordScore = false
         
         if sender.tag == correctAnswer{
             title = "Correct"
             score += 1
+            defaults.set(score,forKey: "savedScore")
             correctGuesses += 1
         }else{
             title = "Wrong"
             score -= 1
+            defaults.set(score,forKey: "savedScore")
             wrongFlagText = "That is the flag of \(countries[sender.tag].uppercased())\n"
         }
         tries+=1
         completed10FlagText = tries%10==0 ? "Complete 10 flags" : ""
+        if score > lastScore {
+            recordScore = true
+        }else{
+            recordScore = false
+        }
         let ac = UIAlertController(title: title,
-                                   message: "\( wrongFlagText )\nYour score is \(score)\n\(completed10FlagText)",
+                                   message: "\( wrongFlagText )\nYour score is \(recordScore ? "record: ":"")\(score)\n\(completed10FlagText)",
                                    preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "Continue", style: .default, handler: askQuestion))
         present(ac, animated: true)
