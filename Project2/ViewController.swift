@@ -52,9 +52,13 @@ class ViewController: UIViewController {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
         
+        
         button1.setImage(UIImage(named: countries[0]), for: .normal)
         button2.setImage(UIImage(named: countries[1]), for: .normal)
         button3.setImage(UIImage(named: countries[2]), for: .normal)
+        button1.transform = .identity
+        button2.transform = .identity
+        button3.transform = .identity
         
         
         //title = "Tap flag for: " + countries[correctAnswer].uppercased() + " /score:\(score)/"
@@ -73,6 +77,12 @@ class ViewController: UIViewController {
         var wrongFlagText: String = ""
         var completed10FlagText: String = ""
         var recordScore = false
+        
+        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 5,options: [], animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.85, y: 0.85) }){finished in
+                print("scaleDown button flag")
+            }
+                 
         
         if sender.tag == correctAnswer{
             title = "Correct"
