@@ -4,10 +4,10 @@
 //
 //  Created by Yulian Gyuroff on 20.09.23.
 //
-
+import UserNotifications
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController,UNUserNotificationCenterDelegate {
     @IBOutlet var button1: UIButton!
     @IBOutlet var button2: UIButton!
     @IBOutlet var button3: UIButton!
@@ -23,6 +23,12 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let center = UNUserNotificationCenter.current()
+        center.removeAllPendingNotificationRequests()
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(showScore))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Register", style: .plain, target: self, action: #selector(registerLocal))
         
         if let savedScore = defaults.object(forKey: "savedScore") as? Int {
             lastScore = savedScore
@@ -42,8 +48,6 @@ class ViewController: UIViewController {
         button1.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         button2.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         button3.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(showScore))
         
         askQuestion()
     }
@@ -52,14 +56,12 @@ class ViewController: UIViewController {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
         
-        
         button1.setImage(UIImage(named: countries[0]), for: .normal)
         button2.setImage(UIImage(named: countries[1]), for: .normal)
         button3.setImage(UIImage(named: countries[2]), for: .normal)
         button1.transform = .identity
         button2.transform = .identity
         button3.transform = .identity
-        
         
         //title = "Tap flag for: " + countries[correctAnswer].uppercased() + " /score:\(score)/"
         let label: UILabel = UILabel(frame: CGRectMake(0, 0, 400, 50))
@@ -82,8 +84,7 @@ class ViewController: UIViewController {
             sender.transform = CGAffineTransform(scaleX: 0.85, y: 0.85) }){finished in
                 print("scaleDown button flag")
             }
-                 
-        
+         
         if sender.tag == correctAnswer{
             title = "Correct"
             score += 1
@@ -117,5 +118,66 @@ class ViewController: UIViewController {
         present(ac, animated: true)
     }
     
+    @objc func registerLocal() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert,.badge,.sound]) { granted, error in
+            if granted {
+                print("Yay! - Granted!")
+                self.scheduleLocal()
+            }else{
+                print("Oh no! - Not Granted!")
+            }
+        }
+    }
+    
+    func scheduleLocal() {
+            registerCategories()
+            let center = UNUserNotificationCenter.current()
+            center.removeAllPendingNotificationRequests()
+            
+            let content = UNMutableNotificationContent()
+            content.title = "Guess the Flag"
+            content.body = "You haven't forgot the game, have you?"
+            content.categoryIdentifier = "alarm"
+            content.userInfo = ["customData": "fizzbuzz"]
+            content.sound = .default
+        
+            var dateComponents = DateComponents()
+            dateComponents.hour = 18
+            dateComponents.minute = 53
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+            //let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeIntervalForNextAlert, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            center.add(request)
+            
+        }
+    
+    func registerCategories() {
+           let center = UNUserNotificationCenter.current()
+           center.delegate = self
+           
+           let show = UNNotificationAction(identifier: "show", title: "Tell me more...",options: .foreground)
+           //let later = UNNotificationAction(identifier: "later", title: "Remind me later...",options: .foreground)
+           let category = UNNotificationCategory(identifier: "alarm", actions: [show], intentIdentifiers: [])
+           center.setNotificationCategories([category])
+        }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        
+        if let customData = userInfo["customData"] as? String {
+            print("Custom data received: \(customData)")
+            
+            switch response.actionIdentifier {
+            case UNNotificationDefaultActionIdentifier:
+                //user swiped to unlock
+                print("default identifier")
+            case "show":
+                print("Show more information...")
+            default:
+                break
+            }
+        }
+    }
 }
 
